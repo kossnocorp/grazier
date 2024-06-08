@@ -1,42 +1,48 @@
-use notify::RecursiveMode;
-use notify::Watcher;
+use clap::{Parser, Subcommand};
+use notify::{RecursiveMode, Watcher};
 use notify_debouncer_full::new_debouncer;
-use std::{fs, thread, time::Duration};
-use tempfile::tempdir;
+use std::path::PathBuf;
+use std::time::Duration;
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Starts the watch mode
+    Watch {
+        /// The directory to watch
+        #[arg(short, long)]
+        cwd: PathBuf,
+    },
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let dir = tempdir()?;
-    let dir_path = dir.path().to_path_buf();
+    let cli = Cli::parse();
 
-    thread::spawn(move || {
-        let mut n = 1;
-        let mut file_path = dir_path.join(format!("file-{n:03}.txt"));
-        loop {
-            for _ in 0..5 {
-                fs::write(&file_path, b"Lorem ipsum").unwrap();
-                thread::sleep(Duration::from_millis(500));
+    match &cli.command {
+        Some(Commands::Watch { cwd }) => {
+            let (tx, rx) = std::sync::mpsc::channel();
+
+            let mut debouncer = new_debouncer(Duration::from_secs(2), None, tx)?;
+
+            debouncer
+                .watcher()
+                .watch(cwd.as_path(), RecursiveMode::Recursive)?;
+
+            for result in rx {
+                match result {
+                    Ok(events) => events.iter().for_each(|event| println!("{event:?}")),
+                    Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
+                }
+                println!();
             }
-            n += 1;
-            let target_path = dir_path.join(format!("file-{n:03}.txt"));
-            fs::rename(&file_path, &target_path).unwrap();
-            file_path = target_path;
         }
-    });
-
-    let (tx, rx) = std::sync::mpsc::channel();
-
-    let mut debouncer = new_debouncer(Duration::from_secs(2), None, tx)?;
-
-    debouncer
-        .watcher()
-        .watch(dir.path(), RecursiveMode::Recursive)?;
-
-    for result in rx {
-        match result {
-            Ok(events) => events.iter().for_each(|event| println!("{event:?}")),
-            Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
-        }
-        println!();
+        None => {}
     }
 
     Ok(())
