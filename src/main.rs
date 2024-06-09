@@ -1,8 +1,10 @@
 use clap::{Parser, Subcommand};
-use notify::{RecursiveMode, Watcher};
-use notify_debouncer_full::new_debouncer;
+use commands::watch::watch_command;
 use std::path::PathBuf;
-use std::time::Duration;
+
+mod commands;
+mod fs_watcher;
+mod monorepo;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -21,29 +23,12 @@ enum Commands {
     },
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::Watch { cwd }) => {
-            let (tx, rx) = std::sync::mpsc::channel();
-
-            let mut debouncer = new_debouncer(Duration::from_secs(2), None, tx)?;
-
-            debouncer
-                .watcher()
-                .watch(cwd.as_path(), RecursiveMode::Recursive)?;
-
-            for result in rx {
-                match result {
-                    Ok(events) => events.iter().for_each(|event| println!("{event:?}")),
-                    Err(errors) => errors.iter().for_each(|error| println!("{error:?}")),
-                }
-                println!();
-            }
-        }
-        None => {}
+        Some(Commands::Watch { cwd }) => watch_command(cwd).await,
+        None => Ok(()),
     }
-
-    Ok(())
 }
