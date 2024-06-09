@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 mod commands;
 mod fs_watcher;
+mod js;
 mod monorepo;
 
 #[derive(Parser)]
