@@ -1,12 +1,11 @@
-use std::path::PathBuf;
-
+use crate::js::npm::{flavor::find_npm_flavor, Npm};
 use notify_debouncer_full::DebouncedEvent;
-
-use crate::js::npm::flavor::find_npm_flavor;
+use std::path::PathBuf;
 
 pub struct Monorepo {
     path: PathBuf,
     state: MonorepoState,
+    npm: Npm,
 }
 
 pub enum MonorepoState {
@@ -18,27 +17,31 @@ pub enum MonorepoState {
 
 impl Monorepo {
     pub fn new(path: PathBuf) -> Self {
+        let npm = Npm::new(path.clone());
         Self {
             // npm_flavor: None,
             path,
             state: MonorepoState::Initial,
+            npm,
         }
     }
 
     pub async fn next(
-        &self,
+        &mut self,
         event: Option<DebouncedEvent>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        match event {
-            None => {
-                println!("Initial event");
-                let flavor = find_npm_flavor(&self.path).await;
-            }
+        self.npm.next(event.as_ref()).await?;
 
-            _ => {
-                println!("Received an event: {:?}", event);
-            }
-        }
+        // match event {
+        //     None => {
+        //         println!("Initial event");
+        //         let flavor = find_npm_flavor(&self.path).await;
+        //     }
+
+        //     _ => {
+        //         println!("Received an event: {:?}", event);
+        //     }
+        // }
         Ok(())
     }
 }
