@@ -1,3 +1,4 @@
+use crate::js::npm::flavor::{find_npm_flavor, load_workspaces_list};
 use crate::js::npm::{flavor::find_npm_flavor, Npm};
 use notify_debouncer_full::DebouncedEvent;
 use std::path::PathBuf;

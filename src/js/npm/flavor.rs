@@ -35,6 +35,38 @@ pub fn match_npm_flavor_event(path: &PathBuf, event: Option<&DebouncedEvent>) ->
     false
 }
 
-pub struct PnpmFlavor {}
+// pub fn load_workspaces_list(flavor: FlavorType) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+//     match flavor {
+//         FlavorType::Pnpm => Ok(vec![]),
+//         FlavorType::Npm => Ok(vec![]),
+//     }
+// }
 
 pub struct PlainFlavor {}
+
+pub struct PnpmFlavor {}
+
+// impl Flavor for PnpmFlavor {
+//     async fn load_workspaces_list(&self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+//         Ok(vec![])
+//     }
+// }
+
+// pub struct NpmFlavor {}
+
+// impl Flavor for NpmFlavor {
+//     async fn load_workspaces_list(&self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+//         Ok(vec![])
+//     }
+// }
+
+// pub trait Flavor {
+//     async fn load_workspaces_list(&self) -> Result<Vec<String>, Box<dyn std::error::Error>>;
+// }
+
+// pub enum FlavorState {
+//     Initial,
+//     Loading,
+//     Errored,
+//     Ready,
+// }
