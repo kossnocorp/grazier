@@ -1,12 +1,15 @@
-use crate::js::npm::flavor::{find_npm_flavor, load_workspaces_list};
-use crate::js::npm::{flavor::find_npm_flavor, Npm};
+use crate::{
+    js::npm::{Npm, NpmUpdate},
+    source::{Source, SourceUpdate},
+};
 use notify_debouncer_full::DebouncedEvent;
 use std::path::PathBuf;
 
 pub struct Monorepo {
     path: PathBuf,
     state: MonorepoState,
-    npm: Npm,
+    sources: Vec<Box<dyn Source>>,
+    // npm: Npm,
 }
 
 pub enum MonorepoState {
@@ -20,29 +23,32 @@ impl Monorepo {
     pub fn new(path: PathBuf) -> Self {
         let npm = Npm::new(path.clone());
         Self {
-            // npm_flavor: None,
             path,
             state: MonorepoState::Initial,
-            npm,
+            sources: vec![Box::new(npm)],
         }
     }
 
-    pub async fn next(
+    pub async fn update(
         &mut self,
         event: Option<DebouncedEvent>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        self.npm.next(event.as_ref()).await?;
+        let mut sources_updated = false;
 
-        // match event {
-        //     None => {
-        //         println!("Initial event");
-        //         let flavor = find_npm_flavor(&self.path).await;
-        //     }
+        // [TODO] Run updates in parallel
+        for source in &mut self.sources {
+            let source_update = source.update(event.as_ref())?;
+            if let SourceUpdate::Updated = source_update {
+                sources_updated = true;
+            }
+        }
 
-        //     _ => {
-        //         println!("Received an event: {:?}", event);
-        //     }
-        // }
+        if sources_updated {
+            // [TODO] Calculate the new workspaces list:
+            // - Initialize new
+            // - Handle removed
+        }
+
         Ok(())
     }
 }

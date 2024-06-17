@@ -6,6 +6,7 @@ mod commands;
 mod fs_watcher;
 mod js;
 mod monorepo;
+mod source;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
