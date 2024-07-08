@@ -1,3 +1,5 @@
+use crate::error::Result;
+
 use super::{NpmFlavor, NpmFlavorDetectable};
 use std::{fs, path::PathBuf};
 
@@ -25,7 +27,7 @@ impl NpmFlavorDetectable for PnpmFlavor {
 }
 
 impl NpmFlavor for PnpmFlavor {
-    fn workspaces(&self) -> Vec<PathBuf> {
-        vec![]
+    fn packages(&self) -> Result<Vec<PathBuf>> {
+        Ok(vec![])
     }
 }

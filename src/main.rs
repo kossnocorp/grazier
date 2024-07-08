@@ -3,10 +3,12 @@ use commands::watch::watch_command;
 use std::path::PathBuf;
 
 mod commands;
+mod dialect;
+mod error;
 mod fs_watcher;
 mod js;
 mod monorepo;
-mod source;
+mod package;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]

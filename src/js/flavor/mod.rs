@@ -7,6 +7,8 @@ use std::{
     path::PathBuf,
 };
 
+use crate::error::Result;
+
 mod plain;
 mod pnpm;
 
@@ -29,7 +31,7 @@ pub fn is_npm_flavor_source(filename: &str) -> bool {
 }
 
 pub trait NpmFlavor {
-    fn workspaces(&self) -> Vec<PathBuf>;
+    fn packages(&self) -> Result<Vec<PathBuf>>;
 }
 
 pub trait NpmFlavorDetectable {
