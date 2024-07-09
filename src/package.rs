@@ -1,15 +1,16 @@
 use crate::dialect::Dialect;
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    sync::{Arc, RwLock},
+};
 
-// use crate::npm_package::NpmPackage;
-
-pub struct Package<'a> {
+pub struct Package {
     pub path: PathBuf,
     pub state: PackageState,
-    pub dialects: Vec<Box<&'a dyn Dialect>>,
+    pub dialects: Vec<Arc<RwLock<dyn Dialect + Send + Sync>>>,
 }
 
-impl Package<'_> {
+impl Package {
     pub fn new(path: PathBuf) -> Self {
         Self {
             path,
