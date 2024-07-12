@@ -5,11 +5,13 @@ use crate::{
 use notify_debouncer_full::DebouncedEvent;
 use plain::PlainFlavor;
 use pnpm::PnpmFlavor;
-use std::path::PathBuf;
+use std::{fmt::Debug, path::PathBuf};
+use tracing::debug;
 
 mod plain;
 mod pnpm;
 
+#[derive(Debug)]
 pub struct Npm {
     path: PathBuf,
     state: NpmState,
@@ -27,12 +29,15 @@ impl Npm {
         match &self.state {
             // Initialize the npm source.
             NpmState::Initial => {
+                debug!("Initializing npm source");
                 if let Some(flavor) = detect_npm_flavor(&self.path) {
-                    let packages = flavor.packages();
+                    debug!("Detected npm flavor: {:?}", flavor);
+                    let packages = flavor.packages(&self.path);
                     self.state = NpmState::Loaded(flavor);
                     return self.update_packages(packages);
                 } else {
                     // None of the npm flavors were detected, which means it's not a npm source.
+                    debug!("Can't detect npm flavor");
                     self.state = NpmState::NotFound;
                 }
             }
@@ -41,7 +46,7 @@ impl Npm {
                 // Load the packages if the flavor was updated.
                 if let Some(event) = event {
                     if self.did_flavor_update(event) {
-                        let packages = flavor.packages();
+                        let packages = flavor.packages(&self.path);
                         return self.update_packages(packages);
                     }
                 }
@@ -75,14 +80,15 @@ impl Npm {
         match packages {
             Ok(packages) => Ok(DialectSourceUpdate::Updated(packages)),
 
-            Err(Error) => {
-                self.state = NpmState::Errored(Error);
+            Err(e) => {
+                self.state = NpmState::Errored(e);
                 Ok(DialectSourceUpdate::Errored)
             }
         }
     }
 }
 
+#[derive(Debug)]
 pub enum NpmState {
     Initial,
     NotFound,
@@ -103,8 +109,8 @@ pub fn is_npm_flavor_source(filename: &str) -> bool {
     PnpmFlavor::is_source_file(filename) || PlainFlavor::is_source_file(filename)
 }
 
-pub trait NpmFlavor: Send + Sync {
-    fn packages(&self) -> Result<Vec<PathBuf>>;
+pub trait NpmFlavor: Send + Sync + Debug {
+    fn packages(&self, path: &PathBuf) -> Result<Vec<PathBuf>>;
 }
 
 pub trait NpmFlavorDetectable {

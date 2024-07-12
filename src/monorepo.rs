@@ -9,7 +9,9 @@ use std::{
     path::PathBuf,
     sync::{Arc, RwLock},
 };
+use tracing::debug;
 
+#[derive(Debug)]
 pub struct Monorepo {
     path: PathBuf,
     state: MonorepoState,
@@ -17,6 +19,7 @@ pub struct Monorepo {
     packages: HashMap<PathBuf, Package>,
 }
 
+#[derive(Debug)]
 pub enum MonorepoState {
     Initial,
     Loading,
@@ -47,7 +50,8 @@ impl Monorepo {
 
             match update_result {
                 Ok(DialectSourceUpdate::Updated(packages)) => {
-                    // let dialect_ptr = dialect.as_ref() as *const dyn Dialect;
+                    debug!("Dialect source got updated {:?}", dialect);
+                    debug!("Got the packages list {:?}", packages);
 
                     // Here we do several things:
                     // - Add the dialect to the packages in the updated list that don't have it.
@@ -78,7 +82,11 @@ impl Monorepo {
                         package.dialects.retain(|d| !Arc::ptr_eq(d, dialect));
 
                         // If the package has no dialects left, remove it.
-                        !package.dialects.is_empty()
+                        let no_dialects = package.dialects.is_empty();
+                        if no_dialects {
+                            debug!("Untracking package {:?}", package);
+                        }
+                        !no_dialects
                     });
 
                     // Now add new packages to the list.
@@ -86,32 +94,27 @@ impl Monorepo {
                         if !self.packages.contains_key(&path) {
                             let mut package = Package::new(path.clone());
                             package.dialects.push(Arc::clone(dialect));
+                            debug!("Tracking package {:?}", package);
                             self.packages.insert(path.clone(), package);
                         }
                     }
                 }
 
                 Ok(DialectSourceUpdate::Errored) => {
+                    debug!("Dialect source errored {:?}", dialect);
                     // [TODO] Handle error
                 }
 
                 Err(e) => {
+                    debug!("Dialect source errored {:?}", dialect);
                     // [TODO] Handle error
                 }
 
-                Ok(DialectSourceUpdate::Ignored) => {}
+                Ok(DialectSourceUpdate::Ignored) => {
+                    debug!("Dialect source ignored {:?}", dialect);
+                }
             };
-
-            // if let SourceUpdate::Updated(packages) = source_update {
-            //     sources_updated = true;
-            // }
         }
-
-        // if sources_updated {
-        //     // [TODO] Calculate the new packages list:
-        //     // - Initialize new
-        //     // - Handle removed
-        // }
 
         Ok(())
     }

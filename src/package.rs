@@ -1,9 +1,12 @@
+use serde::de;
+
 use crate::dialect::Dialect;
 use std::{
     path::PathBuf,
     sync::{Arc, RwLock},
 };
 
+#[derive(Debug)]
 pub struct Package {
     pub path: PathBuf,
     pub state: PackageState,
@@ -20,6 +23,7 @@ impl Package {
     }
 }
 
+#[derive(Debug)]
 pub enum PackageState {
     Initial,
     Loaded,

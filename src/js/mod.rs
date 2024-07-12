@@ -10,6 +10,7 @@ pub mod npm;
 
 pub const JS_PACKAGE_JSON: &str = "package.json";
 
+#[derive(Debug)]
 pub struct JS {
     // path: PathBuf,
     npm: Npm,
