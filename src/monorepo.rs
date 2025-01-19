@@ -79,7 +79,9 @@ impl Monorepo {
                         }
 
                         // Otherwise, remove the dialect from the package.
-                        package.dialects.retain(|d| !Arc::ptr_eq(d, dialect));
+                        package
+                            .dialects
+                            .retain(|package_dialect| !Arc::ptr_eq(package_dialect, dialect));
 
                         // If the package has no dialects left, remove it.
                         let no_dialects = package.dialects.is_empty();

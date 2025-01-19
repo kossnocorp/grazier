@@ -8,8 +8,8 @@ pub fn watch_command(cwd: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
     monorepo.update(None)?;
 
     // Start watching the filesystem
-    let (rx, stop) = watch_fs(cwd)?;
-    for event in rx {
+    let (events_tx, stop) = watch_fs(cwd)?;
+    for event in events_tx {
         println!("{event:?}");
         monorepo.update(Some(event))?;
     }
