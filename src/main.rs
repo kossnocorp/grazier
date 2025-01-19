@@ -27,8 +27,7 @@ enum Commands {
     },
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
@@ -36,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Some(Commands::Watch { cwd }) => watch_command(cwd).await,
+        Some(Commands::Watch { cwd }) => watch_command(cwd),
         None => Ok(()),
     }
 }

@@ -1,14 +1,15 @@
 use notify::{Error, RecursiveMode, Watcher};
 use notify_debouncer_full::{new_debouncer, DebouncedEvent};
 use std::path::PathBuf;
+use std::sync::mpsc::{self, Receiver};
+use std::thread;
 use std::time::Duration;
-use tokio::sync::mpsc::{self, Receiver};
 
 pub fn watch_fs(cwd: &PathBuf) -> Result<(Receiver<DebouncedEvent>, impl FnOnce()), Error> {
-    let (notify_tx, notify_rx) = std::sync::mpsc::channel();
+    let (notify_tx, notify_rx) = mpsc::channel();
 
     let mut debouncer = new_debouncer(Duration::from_millis(50), None, move |res| {
-        notify_tx.send(res).unwrap();
+        notify_tx.send(res).ok();
     })?;
 
     debouncer
@@ -16,14 +17,16 @@ pub fn watch_fs(cwd: &PathBuf) -> Result<(Receiver<DebouncedEvent>, impl FnOnce(
         .watch(cwd.as_path(), RecursiveMode::Recursive)?;
 
     let stop = move || drop(debouncer);
-    let (tx, rx) = mpsc::channel(32);
+    let (events_tx, events_rx) = mpsc::channel();
 
-    tokio::spawn(async move {
-        while let Ok(res) = notify_rx.recv() {
+    thread::spawn(move || {
+        for res in notify_rx {
             match res {
                 Ok(events) => {
                     for event in events {
-                        tx.send(event).await.unwrap();
+                        if events_tx.send(event).is_err() {
+                            break;
+                        }
                     }
                 }
                 Err(errors) => {
@@ -35,5 +38,5 @@ pub fn watch_fs(cwd: &PathBuf) -> Result<(Receiver<DebouncedEvent>, impl FnOnce(
         }
     });
 
-    Ok((rx, stop))
+    Ok((events_rx, stop))
 }

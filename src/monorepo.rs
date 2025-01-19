@@ -38,7 +38,7 @@ impl Monorepo {
         }
     }
 
-    pub async fn update(
+    pub fn update(
         &mut self,
         event: Option<DebouncedEvent>,
     ) -> Result<(), Box<dyn std::error::Error>> {
